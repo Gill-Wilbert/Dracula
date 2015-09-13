@@ -12,8 +12,17 @@
 
 #define PLAY_LENGTH 8
      
+typedef struct _trailnode {
+    LocationID location;
+    int turnvisited;
+    int isdoubleback;
+    int ishide;
+    int isvampire; 
+    int traps;
+} trailnode;   
      
 typedef struct _player {
+     trailnode trail[6];
      int health;
      LocationID currlocation;
 } player;
@@ -24,7 +33,7 @@ struct gameView {
     //char *pastplays;
     int score;
     int roundnum;
-    int turnnum;
+    int currplayer;
 };
 
 // Creates a new GameView to summarise the current state of the game
@@ -36,13 +45,15 @@ GameView newGameView(char *pastPlays, PlayerMessage messages[])
     int currplay = 0;
     LocationID newlocid = 0;
     char newloc[3];
+    int messagecount = 0;
+    int offset;
       
     assert(g != NULL);
     
     //initialize score, roundnum
     g->score = 366;
     g->roundnum = 0;
-    g->turnnum = 0;
+    g->currplayer = 0;
 
     //initialize hunters 
     for(i=0; i<(NUM_PLAYERS-1); i++) {
@@ -57,7 +68,9 @@ GameView newGameView(char *pastPlays, PlayerMessage messages[])
     //loop through pastPlays to create game status  
     if (pastPlays[currplay] != '\0') {
          do {   
- 
+                
+            printf("%s\n",messages[messagecount]);
+            
             newloc[0] = pastPlays[currplay+1];
             newloc[1] = pastPlays[currplay+2];  
             newloc[2] = '\0';
@@ -70,16 +83,46 @@ GameView newGameView(char *pastPlays, PlayerMessage messages[])
                 newlocid = abbrevToID(newloc);
             }
             
-
-            g->players[g->turnnum].currlocation = newlocid;
+            g->players[g->currplayer].currlocation = newlocid; 
             
-            g->turnnum++;
-            if(g->turnnum > 4) { 
+            //Hunter
+            if(g->currplayer < 4) {
+                for(offset=3; offset<7; offset++) {
+                    if(pastPlays[currplay+offset] == 'T') {
+                         //encounter with trap
+                         g->players[g->currplayer].health -= 2;      
+                    } else if (pastPlays[currplay+offset] == 'D') {
+                         //encounter with Dracula
+                         g->players[g->currplayer].health -= 4;
+                         g->players[4].health -= 10;
+                    }
+                }
+            //else Dracula
+            } else {
+                for(offset=3; offset<6; offset++) {
+                    if(pastPlays[currplay+offset] == 'T') {
+                         //trap placed     
+                    } else if (pastPlays[currplay+offset] == 'V') {
+                         //vampire placed
+                    } 
+                }
+                if(pastPlays[currplay+offset] == 'M') {
+                     //trap has left the trail    
+                } else if (pastPlays[currplay+offset] == 'V') {
+                     //vampire has matured
+                }
+            }
+            
+                
+
+            g->currplayer++;
+            if(g->currplayer > 4) { 
                 g->roundnum++; 
-                g->turnnum = 0;    
+                g->currplayer = 0;    
             }
              
             currplay += PLAY_LENGTH;
+            messagecount++;
             
         } while(pastPlays[currplay-1] != '\0');
     }
@@ -125,7 +168,7 @@ Round getRound(GameView currentView)
 PlayerID getCurrentPlayer(GameView currentView)
 {
     assert(currentView != NULL);
-    return (PlayerID)(currentView->turnnum);
+    return (PlayerID)(currentView->currplayer);
 }
 
 // Get the current score
