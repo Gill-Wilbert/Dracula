@@ -34,8 +34,9 @@ GameView newGameView(char *pastPlays, PlayerMessage messages[])
     GameView g = malloc(sizeof(struct gameView));
     int i = 0;
     int currplay = 0;
-    //int currplayer;
-    int newlocid = 0;
+    LocationID newlocid = 0;
+    char newloc[3];
+      
     assert(g != NULL);
     
     //initialize score, roundnum
@@ -52,14 +53,14 @@ GameView newGameView(char *pastPlays, PlayerMessage messages[])
     //initialize dracula 
     g->players[i].health = GAME_START_BLOOD_POINTS;
     g->players[i].currlocation = UNKNOWN_LOCATION;
-    
+
     //loop through pastPlays to create game status  
     if (pastPlays[currplay] != '\0') {
-         do { 
-            printf("curr play: {%c} \n",pastPlays[currplay]);
-            
-            char newloc[2];
-            sprintf(newloc, "%c%c", pastPlays[currplay+1],pastPlays[currplay+2]);
+         do {   
+ 
+            newloc[0] = pastPlays[currplay+1];
+            newloc[1] = pastPlays[currplay+2];  
+            newloc[2] = '\0';
                         
             if(strcmp(newloc,"C?") == 0) {
                 newlocid = 100;
@@ -68,28 +69,19 @@ GameView newGameView(char *pastPlays, PlayerMessage messages[])
             } else {
                 newlocid = abbrevToID(newloc);
             }
-             printf("%d\n",newlocid);
-            g->players[g->turnnum].currlocation = newlocid;  
-            printf("%d\n", g->players[g->turnnum].currlocation);
-           
-    
-            printf("turn %d \n",g->turnnum);
-            printf("round %d \n",g->roundnum);
+            
+
+            g->players[g->turnnum].currlocation = newlocid;
             
             g->turnnum++;
             if(g->turnnum > 4) { 
                 g->roundnum++; 
-                g->turnnum = 0; 
+                g->turnnum = 0;    
             }
              
-            currplay+=8;
-
+            currplay += PLAY_LENGTH;
+            
         } while(pastPlays[currplay-1] != '\0');
-        g->turnnum++;
-            if(g->turnnum > 4) { 
-                g->roundnum++; 
-                g->turnnum = 0; 
-        }
     }
  
     return g;
