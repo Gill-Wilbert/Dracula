@@ -12,7 +12,7 @@ typedef struct vNode *VList;
 
 struct vNode {
    LocationID  v;    // ALICANTE, etc
-   TransportID type; // ROAD, RAIL, BOAT
+   TransportID type[MAX_TRANSPORT]; // ROAD, RAIL, BOAT
    VList       next; // link to next node
 };
 
@@ -60,34 +60,53 @@ void disposeMap(Map g)
    free(g);
 }
 
-static VList insertVList(VList L, LocationID v, TransportID type)
+// Insert vertice at the front of list L
+static VList insertVList(VList L, LocationID v, TransportID t)
 {
+   // Checks if vertice already in list
+   VList cur;
+   for (cur = L; cur != NULL; cur = cur->next) {
+      if (cur->v == v) {
+         int i;
+         for (i = 0; i < MAX_TRANSPORT && cur->type[i] != 0; i++)
+            if (cur->type[i] == t) return L;
+         cur->type[i] = t;
+         return L;
+      }
+   }
+   // Creates new vertice if not already in list
    VList newV = malloc(sizeof(struct vNode));
+   int i;
+   for (i = 0; i < MAX_TRANSPORT; i++)
+      newV->type[i] = 0;
    newV->v = v;
-   newV->type = type;
+   newV->type[0] = t;
    newV->next = L;
    return newV;
 }
 
-static int inVList(VList L, LocationID v, TransportID type)
+static int inVList(VList L, LocationID v, TransportID t)
 {
-	VList cur;
-	for (cur = L; cur != NULL; cur = cur->next) {
-		if (cur->v == v && cur->type == type) return 1;
-	}
-	return 0;
+   VList cur;
+   for (cur = L; cur != NULL; cur = cur->next) {
+      if (cur->v == v){
+         int i;
+         for (i = 0; i < MAX_TRANSPORT && cur->type[i] != 0; i++)
+            if (cur->type[i] == t) return 1;
+      }
+   }
+   return 0;
 }
 
 // Add a new edge to the Map/Graph
 void addLink(Map g, LocationID start, LocationID end, TransportID type)
 {
-	assert(g != NULL);
-	// don't add edges twice
-	if (!inVList(g->connections[start],end,type)) {
-   	g->connections[start] = insertVList(g->connections[start],end,type);
-   	g->connections[end] = insertVList(g->connections[end],start,type);
-   	g->nE++;
-	}
+   assert(g != NULL);
+   if (!inVList(g->connections[start],end,type)) {
+         g->connections[start] = insertVList(g->connections[start],end,type);
+         g->connections[end] = insertVList(g->connections[end],start,type);
+         g->nE++;
+   }
 }
 
 // Display content of Map/Graph
@@ -99,12 +118,23 @@ void showMap(Map g)
    for (i = 0; i < g->nV; i++) {
       VList n = g->connections[i];
       while (n != NULL) {
-         printf("%s connects to %s ",idToName(i),idToName(n->v));
-         switch (n->type) {
-         case ROAD: printf("by road\n"); break;
-         case RAIL: printf("by rail\n"); break;
-         case BOAT: printf("by boat\n"); break;
-         default:   printf("by ????\n"); break;
+         printf("%s connects to %s by ",idToName(i),idToName(n->v));
+         int j;
+         for (j = 0; j < MAX_TRANSPORT && n->type[j+1] != 0; j++){
+            switch (n->type[i]) {
+            case ROAD: printf("road, "); break;
+            case RAIL: printf("rail, "); break;
+            case BOAT: printf("boat, "); break;
+            default:   printf("????, "); break;
+            }
+         }
+         if (j > 1)
+            printf("and ");
+         switch (n->type[j]) {
+         case ROAD: printf("road\n"); break;
+         case RAIL: printf("rail\n"); break;
+         case BOAT: printf("boat\n"); break;
+         default:   printf("????\n"); break;
          }
          n = n->next;
       }
@@ -119,19 +149,56 @@ int numV(Map g)
 }
 
 // Return count of edges of a particular type
-int numE(Map g, TransportID type)
+int numE(Map g, TransportID t)
 {
    int i, nE=0;
    assert(g != NULL);
-   assert(type >= 0 && type <= ANY);
+   assert(t >= 0 && t <= ANY);
    for (i = 0; i < g->nV; i++) {
       VList n = g->connections[i];
       while (n != NULL) {
-         if (n->type == type || type == ANY) nE++;
-         n = n->next;
+         int j;
+         for (j = 0; j < MAX_TRANSPORT && n->type[j] != 0; j++) {
+            if (n->type[j] == t || n->type[j] == ANY){
+               nE++;
+               break;
+            }
+         }
       }
-    }
-    return nE;
+         n = n->next;
+   }
+   return nE;
+}
+
+// Returns the number of direct connections between two nodes
+// Also fills the type[] array with the various connection types
+// Returns 0 if no direct connection (i.e. not adjacent in graph)
+int connections(Map g, LocationID start, LocationID end, TransportID type[])
+{
+   assert (g != NULL);
+   assert (validPlace(start) && validPlace(end));
+   assert (type != NULL);
+   VList cur;
+   int i = 0;
+
+   for (cur = g->connections[start]; cur != NULL; cur = cur->next) {
+      if (i == MAX_TRANSPORT)
+         break;
+      if (cur->v == end) {
+         int j;
+         for (j = 0; j < MAX_TRANSPORT && cur->type[j] != 0; j++) {
+            switch (cur->type[j]) {
+            case ROAD: type[i++] = ROAD; break;
+            case RAIL: type[i++] = RAIL; break;
+            case BOAT: type[i++] = BOAT; break;
+            }
+         }
+      } else if (isSea (cur->v)) {
+         if (inVList (g->connections[cur->v], end, BOAT))
+            type[i++] = BOAT;
+      }
+   }
+   return i;
 }
 
 // Add edges to Graph representing map of Europe
