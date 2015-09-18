@@ -35,7 +35,24 @@ struct gameView {
     int score;
     int roundnum;
     int currplayer;
+    Map map;
 };
+
+typedef struct vNode *VList;
+
+struct vNode {
+   LocationID  v;    // ALICANTE, etc
+   TransportID type[MAX_TRANSPORT]; // ROAD, RAIL, BOAT
+   VList       next; // link to next node
+};
+
+struct MapRep {
+   int   nV;         // #vertices
+   int   nE;         // #edges
+   VList connections[NUM_MAP_LOCATIONS]; // array of lists
+};
+
+static int alreadySeen(int * seen, int numPlaces, LocationID checking);
 
 //function to push location onto the trail[0]
 //and shift the rest of the array by 1
@@ -269,9 +286,79 @@ void getHistory(GameView g, PlayerID player, LocationID trail[TRAIL_SIZE])
 // Returns an array of LocationIDs for all directly connected locations
 
 LocationID *connectedLocations(GameView currentView, int *numLocations,
-                               LocationID from, PlayerID player, Round round,
+                               LocationID from, PlayerID player, Round roundNum,
                                int road, int rail, int sea)
 {
-    //REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-    return NULL;
+    // Quick validity checks
+    if (from < MIN_MAP_LOCATION || from > MAX_MAP_LOCATION)
+        return NULL;
+    if (player < 0 || player > 5) {
+        return NULL;
+    }
+    if (player == PLAYER_DRACULA)
+        rail = 0;
+    int * canVisit = malloc(sizeof(int)*NUM_MAP_LOCATIONS);
+    int i, j, k, seenCount = 0;
+    VList currA, currB, currC;
+    for (i = 0; i < NUM_MAP_LOCATIONS; i++) {
+        canVisit[i] = -1;
+    }
+    // Add itself to seen list
+    canVisit[seenCount++] = from;
+    /* Loop through each location connected to the starting place and add them to the canVisit list
+    if they meet the conditions specified in the parameter or any special condition (i.e rail travel)*/
+    for (currA = currentView->map->connections[from]; currA != NULL; currA = currA->next) {
+        for (i = 0; i < 3; i++) {
+            if (currA->type[i] == ROAD) {
+                if (road == 1 && !alreadySeen(canVisit, seenCount, currA->v))
+                    canVisit[seenCount++] = currA->v;
+            } 
+            if (currA->type[i] == RAIL) {
+                if (rail == 1 && !alreadySeen(canVisit, seenCount, currA->v)) {
+                    switch (roundNum % 4) {
+                    case 0: break;
+                    case 1: 
+                        canVisit[seenCount++] = currA->v; 
+                        break;
+                    // Special case where hunter can move 2 or more locations via rail
+                    default: 
+                        canVisit[seenCount++] = currA->v;
+                        for (currB = currentView->map->connections[currA->v]; currB != NULL; currB = currB->next) {
+                            for (j = 0; j < MAX_TRANSPORT; j++) {
+                                if (currB->type[j] == RAIL && !alreadySeen(canVisit, seenCount, currB->v)) {
+                                    canVisit[ seenCount++] = currB->v;
+                                    if (roundNum % 4 == 3) {
+                                        for (currC = currentView->map->connections[currB->v]; currC != NULL; currC = currC->next) {
+                                            for (k = 0; k < MAX_TRANSPORT; k++) {
+                                                if (currC->type[k] == RAIL && !alreadySeen(canVisit, seenCount, currC->v))
+                                                    canVisit[seenCount++] = currC->v;
+                                            }                                   
+                                        }
+                                    }       
+                                }
+                            }
+                        }
+                    break;
+                    }
+                }
+            }
+            if (currA->type[i] == BOAT) {
+                    if (sea == 1 && !alreadySeen(canVisit, seenCount, currA->v)) {
+                        canVisit[seenCount++] = currA->v;
+                    }
+            }
+        }
+    }
+    *numLocations = seenCount;
+    return canVisit;
+}
+
+// Checks if location already seen, eliminate duplicate locations in list
+static int alreadySeen (int * seen, int numPlaces, LocationID checking) {
+    int i;
+    for (i = 0; i < numPlaces; i++) {
+        if (seen[i] == checking) 
+            return 1;
+    }
+    return 0;
 }
