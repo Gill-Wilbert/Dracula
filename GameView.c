@@ -44,7 +44,7 @@ static void pushtotrail(GameView g, LocationID newlocid) {
     for(i=TRAIL_LENGTH-1; i>0; i--) {
         g->players[g->currplayer].trail[i] = g->players[g->currplayer].trail[i-1];
     }
-	g->players[g->currplayer].trail[i].location = newlocid;
+    g->players[g->currplayer].trail[i].location = newlocid;
     g->players[g->currplayer].trail[i].turnvisited = g->roundnum;
     g->players[g->currplayer].trail[i].isdoubleback = 0;
     g->players[g->currplayer].trail[i].ishide = 0;
@@ -258,11 +258,6 @@ LocationID getLocation(GameView currentView, PlayerID player)
 // Fills the trail array with the location ids of the last 6 turns
 void getHistory(GameView g, PlayerID player, LocationID trail[TRAIL_SIZE])
 {
-
-    printf("player: %d\n",g->currplayer);
-    printf("trail 0: %d\n",g->players[player].trail[0].location);
-    printf("trail 1: %d\n",g->players[player].trail[1].location);
-    printf("trail 2: %d\n",g->players[player].trail[2].location);
     int i;
     for(i=0; i<TRAIL_LENGTH; i++) {
         trail[i] = g->players[player].trail[i].location;
