@@ -53,6 +53,8 @@ struct MapRep {
 };
 
 static int alreadySeen(int * seen, int numPlaces, LocationID checking);
+static void railTravel(GameView currentView, int rail, int *canVisit, int *seenCount, 
+            Round roundNum, VList currA);
 
 //function to push location onto the trail[0]
 //and shift the rest of the array by 1
@@ -86,11 +88,13 @@ static void initializetrails(GameView g) {
     }
 }
 
+#if 0
 //function to check if player is at sea
 //requires checking for double back, etc
 static int isatsea(GameView g, int player) {
     return 0;
 }
+#endif
 
 // Creates a new GameView to summarise the current state of the game
 GameView newGameView(char *pastPlays, PlayerMessage messages[])
@@ -103,6 +107,7 @@ GameView newGameView(char *pastPlays, PlayerMessage messages[])
     char newloc[3];
     int messagecount = 0;
     int offset;
+    g->map = newMap();
       
     assert(g != NULL);
     
@@ -298,54 +303,32 @@ LocationID *connectedLocations(GameView currentView, int *numLocations,
     if (player == PLAYER_DRACULA)
         rail = 0;
     int * canVisit = malloc(sizeof(int)*NUM_MAP_LOCATIONS);
-    int i, j, k, seenCount = 0;
-    VList currA, currB, currC;
+    int i, seenCount = 0;
+    VList currA;// currB, currC;
     for (i = 0; i < NUM_MAP_LOCATIONS; i++) {
         canVisit[i] = -1;
     }
+    printf("here???????\n");
     // Add itself to seen list
     canVisit[seenCount++] = from;
+    printf("%d\n", from);
     /* Loop through each location connected to the starting place and add them to the canVisit list
     if they meet the conditions specified in the parameter or any special condition (i.e rail travel)*/
     for (currA = currentView->map->connections[from]; currA != NULL; currA = currA->next) {
         for (i = 0; i < 3; i++) {
+        printf("here???????\n");
             if (currA->type[i] == ROAD) {
+            
                 if (road == 1 && !alreadySeen(canVisit, seenCount, currA->v))
                     canVisit[seenCount++] = currA->v;
             } 
             if (currA->type[i] == RAIL) {
-                if (rail == 1 && !alreadySeen(canVisit, seenCount, currA->v)) {
-                    switch (roundNum % 4) {
-                    case 0: break;
-                    case 1: 
-                        canVisit[seenCount++] = currA->v; 
-                        break;
-                    // Special case where hunter can move 2 or more locations via rail
-                    default: 
-                        canVisit[seenCount++] = currA->v;
-                        for (currB = currentView->map->connections[currA->v]; currB != NULL; currB = currB->next) {
-                            for (j = 0; j < MAX_TRANSPORT; j++) {
-                                if (currB->type[j] == RAIL && !alreadySeen(canVisit, seenCount, currB->v)) {
-                                    canVisit[ seenCount++] = currB->v;
-                                    if (roundNum % 4 == 3) {
-                                        for (currC = currentView->map->connections[currB->v]; currC != NULL; currC = currC->next) {
-                                            for (k = 0; k < MAX_TRANSPORT; k++) {
-                                                if (currC->type[k] == RAIL && !alreadySeen(canVisit, seenCount, currC->v))
-                                                    canVisit[seenCount++] = currC->v;
-                                            }                                   
-                                        }
-                                    }       
-                                }
-                            }
-                        }
-                    break;
-                    }
-                }
+                railTravel(currentView, rail, canVisit, &seenCount, roundNum, currA);
             }
             if (currA->type[i] == BOAT) {
-                    if (sea == 1 && !alreadySeen(canVisit, seenCount, currA->v)) {
-                        canVisit[seenCount++] = currA->v;
-                    }
+                if (sea == 1 && !alreadySeen(canVisit, seenCount, currA->v)) {
+                    canVisit[seenCount++] = currA->v;
+                }
             }
         }
     }
@@ -354,11 +337,49 @@ LocationID *connectedLocations(GameView currentView, int *numLocations,
 }
 
 // Checks if location already seen, eliminate duplicate locations in list
-static int alreadySeen (int * seen, int numPlaces, LocationID checking) {
+static int alreadySeen (int * seen, int numPlaces, LocationID checking) 
+{
     int i;
     for (i = 0; i < numPlaces; i++) {
         if (seen[i] == checking) 
             return 1;
     }
     return 0;
+}
+
+static void railTravel(GameView currentView, int rail, int *canVisit, 
+                        int *seenCount, Round roundNum, VList currA)
+{
+    int j, k;
+    printf("here???????\n");
+    if (rail == 1 && !alreadySeen(canVisit, *seenCount, currA->v)) {
+        switch (roundNum % 4) {
+        case 0: break;
+        case 1: 
+            canVisit[*seenCount++] = currA->v; 
+            break;
+        // Special case where hunter can move 2 or more locations via rail
+        default: 
+        
+            canVisit[*seenCount++] = currA->v;
+            VList currB = currentView->map->connections[currA->v];
+            for (; currB != NULL; currB = currB->next) {
+                for (j = 0; j < MAX_TRANSPORT; j++) {
+                    if (currB->type[j] == RAIL && !alreadySeen(canVisit, *seenCount, currB->v)) {
+                        canVisit[*seenCount++] = currB->v;
+                        if (roundNum % 4 == 3) {
+                            VList currC = currentView->map->connections[currB->v];
+                            for (; currC != NULL; currC = currC->next) {
+                                for (k = 0; k < MAX_TRANSPORT; k++) {
+                                    if (currC->type[k] == RAIL && !alreadySeen(canVisit, *seenCount, currC->v))
+                                        canVisit[*seenCount++] = currC->v;
+                                }                                   
+                            }
+                        }       
+                    }
+                }
+            }
+        break;
+        }
+    }
 }

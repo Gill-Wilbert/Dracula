@@ -57,7 +57,7 @@ int main()
     assert(history[1] == UNKNOWN_LOCATION);
     printf("passed\n");        
     disposeGameView(gv);
-
+#if 0
     printf("Test for Dracula doubling back at sea, and losing blood points (Hunter View)\n");
     PlayerMessage messages4[] = {"Hello","Rubbish","Stuff","","Mwahahah","Aha!","","","","Back I go"};
     gv = newGameView("GGE.... SGE.... HGE.... MGE.... DS?.... "
@@ -83,7 +83,7 @@ int main()
     assert(getCurrentPlayer(gv) == 0);
     printf("passed\n");
     disposeGameView(gv);
-
+#endif
     printf("Test for connections\n");
     int size, seen[NUM_MAP_LOCATIONS], *edges;
     gv = newGameView("", messages1);    
