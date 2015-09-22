@@ -1,16 +1,20 @@
+# Makefile for COMP1927 ass2a 
+# Will, Brad, Egene, Oscar, Richard
+
 CC = gcc
 CFLAGS = -Wall -Werror -g
 BINS = testGameView testHunterView testDracView
+LIBS = 
 
 all : $(BINS)
 
 testGameView : testGameView.o GameView.o Map.o Places.o 
 testGameView.o : testGameView.c Globals.h Game.h 
 
-testHunterView : testHunterView.o HunterView.o Map.o Places.o
+testHunterView : testHunterView.o HunterView.o GameView.o Map.o Places.o
 testHunterView.o : testHunterView.c Map.c Places.h
 
-testDracView : testDracView.o DracView.o Map.o Places.o
+testDracView : testDracView.o DracView.o GameView.o Map.o Places.o
 testDracView.o : testDracView.c Map.c Places.h
 
 Places.o : Places.c Places.h
