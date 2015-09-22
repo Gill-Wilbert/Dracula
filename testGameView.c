@@ -113,9 +113,6 @@ int main()
     assert(size == 1);
     memset(seen, 0, NUM_MAP_LOCATIONS*sizeof(int));
     for (i = 0; i< size ; i++) seen[edges[i]] = 1;
-    //inserted by Will
-    //printf("FROM testGameView.c\n");
-    //printf("seen[GALATZ] = %d, edges[1] = %d\n", seen[GALATZ], edges[1]);
     assert(seen[GALATZ]);
     printf("Checking Galatz rail connections, roundNum mod 4 = 1\n");
     edges = connectedLocations(gv,&size,GALATZ,PLAYER_LORD_GODALMING,1,0,1,0);

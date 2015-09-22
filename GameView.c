@@ -332,18 +332,6 @@ LocationID *connectedLocations(GameView g, int *numLocations,
     *numLocations = nElems(canVisit);
     return condensedSet(canVisit);
 }
-/*
-// Checks if location already seen, eliminate duplicate locations in list
-static int alreadySeen (int * seen, int numPlaces, LocationID checking) 
-{
-    int i;
-    for (i = 0; i < numPlaces; i++) {
-        if (seen[i] == checking) 
-            return 1;
-    }
-    return 0;
-}
-*/
 
 // railTravel
 // Recursive/Depth first search algorithm to add rail connections within range
@@ -359,6 +347,7 @@ static void railTravel(GameView g, int dist, Set canVisit, VList currLoc)
         return;
     }
     insertInto(canVisit, currLoc->v);
+    printf("Adding connection!!!\n");
     
     while(currLoc != NULL) {
         if(currLoc->type[RAIL-1]) {

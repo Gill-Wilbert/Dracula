@@ -1,5 +1,6 @@
 // set.c - Used to manage a set of LocationIDs
-// Written by Will Gilbert 22nd Sept 2015
+// Adapted from week 8 lab, written by John Shepherd
+// Adapted and expanded for FoD by Will Gilbert 22nd Sept 2015
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -11,8 +12,6 @@ typedef struct SetRep {
 	int   nelems;
 	LocationID elems[NUM_MAP_LOCATIONS];
 } SetRep;
-
-// Function signatures
 
 Set newLocSet();
 void disposeSet(Set);
@@ -113,38 +112,3 @@ LocationID *condensedSet(Set s)
     }
     return condensed;
 }
-
-// Helper functions
-/*
-static Link newNode(char *str)
-{
-	Link new = malloc(sizeof(Node));
-	assert(new != NULL);
-	new->val = strdup(str);
-	new->next = NULL;
-	return new;
-}
-
-static void disposeNode(Link curr)
-{
-	assert(curr != NULL);
-	free(curr->val);
-	free(curr);
-}
-
-// findNode(L,Str)
-// - finds where Str could be added into L
-// - if already in L, curr->val == Str
-// - if not already in L, curr and prev indicate where to insert
-// - return value indicates whether Str found or not
-static int findNode(Link list, char *str, Link *cur, Link *pre)
-{
-	Link curr = list, prev = NULL;
-	while (curr != NULL && strLT(curr->val,str)) {
-		prev = curr;
-		curr = curr->next;
-	}
-	*cur = curr; *pre = prev;
-	return (curr != NULL && strEQ(str,curr->val));
-}
-*/
