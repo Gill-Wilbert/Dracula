@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include "set.h"
+#include "Map.h"
 	
 typedef struct SetRep {
 	int   nelems;
@@ -13,17 +14,18 @@ typedef struct SetRep {
 
 // Function signatures
 
-Set newSet();
+Set newLocSet();
 void disposeSet(Set);
 void insertInto(Set, LocationID);
 void dropFrom(Set, LocationID);
 int  isElem(Set, LocationID);
 int  nElems(Set);
 void showSet(Set);
+LocationID *condensedSet(Set s);
 
 // newSet()
 // Creates set with all locations set to 0
-Set newSet()
+Set newLocSet()
 {
 	Set new = malloc(sizeof(SetRep));
 	assert(new != NULL);
@@ -40,7 +42,7 @@ Set newSet()
 void disposeSet(Set s)
 {
 	if (s == NULL) return;
-	free(s)
+	free(s);
 }
 
 // insertInto(Set,LocationID)
@@ -89,10 +91,27 @@ void showSet(Set s)
 		int i;
 		for(i = 0; i < NUM_MAP_LOCATIONS; i++) {
 		    if(isElem(s,i)) {
-		        printf("%d\n",s->elems[i]);
+		        printf("%d\n",i);
 		    }
 		}
 	}
+}
+
+// condensedSet(Set)
+// Condenses array of all possible locations down to array of only locations
+// which are now in the set
+LocationID *condensedSet(Set s)
+{
+    LocationID *condensed = malloc(sizeof(LocationID)*s->nelems);
+    assert(condensed != NULL);
+    int i, j;
+    for(i = 0, j = 0; i < NUM_MAP_LOCATIONS; i++) {
+        if(s->elems[i] == 1) {
+            condensed[j] = i;
+            j++;
+        }
+    }
+    return condensed;
 }
 
 // Helper functions

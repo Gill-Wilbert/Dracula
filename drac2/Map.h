@@ -11,20 +11,6 @@ typedef struct edge{
     TransportID type;
 } Edge;
 
-typedef struct vNode *VList;
-
-struct vNode {
-   LocationID  v;    // ALICANTE, etc
-   TransportID type[MAX_TRANSPORT]; // ROAD, RAIL, BOAT
-   VList       next; // link to next node
-};
-
-struct MapRep {
-   int   nV;         // #vertices
-   int   nE;         // #edges
-   VList connections[NUM_MAP_LOCATIONS]; // array of lists
-};
-
 // graph representation is hidden 
 typedef struct MapRep *Map; 
 

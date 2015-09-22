@@ -8,8 +8,7 @@
 #include "Game.h"
 #include "GameView.h"
 #include "Map.h"
-#include "set.h"
-
+// #include "Map.h" ... if you decide to use the Map ADT
 
 #define PLAY_LENGTH 8
 #define TRAIL_LENGTH 6  
@@ -39,8 +38,23 @@ struct gameView {
     Map map;
 };
 
-//static int alreadySeen(int * seen, int numPlaces, LocationID checking);
-static void railTravel(GameView g, int dist, Set canVisit, VList currLoc);
+typedef struct vNode *VList;
+
+struct vNode {
+   LocationID  v;    // ALICANTE, etc
+   TransportID type[MAX_TRANSPORT]; // ROAD, RAIL, BOAT
+   VList       next; // link to next node
+};
+
+struct MapRep {
+   int   nV;         // #vertices
+   int   nE;         // #edges
+   VList connections[NUM_MAP_LOCATIONS]; // array of lists
+};
+
+static int alreadySeen(int * seen, int numPlaces, LocationID checking);
+static void railTravel(GameView currentView, int rail, int *canVisit, int *seenCount, 
+            Round roundNum, VList currA);
 
 //function to push location onto the trail[0]
 //and shift the rest of the array by 1
@@ -276,63 +290,49 @@ void getHistory(GameView g, PlayerID player, LocationID trail[TRAIL_SIZE])
 
 // Returns an array of LocationIDs for all directly connected locations
 
-LocationID *connectedLocations(GameView g, int *numLocations,
-                               LocationID from, PlayerID player, Round round,
+LocationID *connectedLocations(GameView currentView, int *numLocations,
+                               LocationID from, PlayerID player, Round roundNum,
                                int road, int rail, int sea)
 {
-    printf("from = %d--%s, player = %d, round = %d,\n", from, idToName(from),
-            player, round);
-    printf("road = %d, rail = %d, sea = %d\n", road, rail, sea);
     // Quick validity checks
-    if (from < MIN_MAP_LOCATION || from > MAX_MAP_LOCATION) {
+    if (from < MIN_MAP_LOCATION || from > MAX_MAP_LOCATION)
         return NULL;
-    }
     if (player < 0 || player > 5) {
         return NULL;
     }
-    if (player == PLAYER_DRACULA) {
+    if (player == PLAYER_DRACULA)
         rail = 0;
+    int * canVisit = malloc(sizeof(int)*NUM_MAP_LOCATIONS);
+    int i, seenCount = 0;
+    VList currA;// currB, currC;
+    for (i = 0; i < NUM_MAP_LOCATIONS; i++) {
+        canVisit[i] = -1;
     }
-    
-    // Create set to keep track of connected locations
-    Set canVisit = newLocSet();
-    int railDistance = (round + player) % 4;
-
-    /* Loop through each location connected to the starting place and add
-    them to the canVisit list if the relevant transport type is legal */
-    VList currLoc = g->map->connections[from];
-    insertInto(canVisit, from);
-    //insertInto(canVisit, currLoc->v);
-    while(currLoc != NULL) {
-        printf("in while loop, checking location %d, %s\n", currLoc->v,
-                idToName(currLoc->v));
-        printf("road = %d, rail = %d, boat = %d\n", currLoc->type[ROAD-1],
-                currLoc->type[RAIL-1], currLoc->type[BOAT-1]);
-        if (currLoc->type[ROAD-1] && road) {
-            insertInto(canVisit, currLoc->v);
-            printf("Adding connection!!!\n");
-        } 
-        if (currLoc->type[RAIL-1] && rail && railDistance) {
-            railTravel(g, railDistance, canVisit, currLoc);
-            printf("Adding connection!!!\n");
-            insertInto(canVisit, currLoc->v);
+    // Add itself to seen list
+    canVisit[seenCount++] = from;
+    /* Loop through each location connected to the starting place and add them to the canVisit list
+    if they meet the conditions specified in the parameter or any special condition (i.e rail travel)*/
+    for (currA = currentView->map->connections[from]; currA != NULL; currA = currA->next) {
+        for (i = 0; i < 3; i++) {
+            if (currA->type[i] == ROAD) {
+            
+                if (road == 1 && !alreadySeen(canVisit, seenCount, currA->v))
+                    canVisit[seenCount++] = currA->v;
+            } 
+            if (currA->type[i] == RAIL) {
+                railTravel(currentView, rail, canVisit, &seenCount, roundNum, currA);
+            }
+            if (currA->type[i] == BOAT) {
+                if (sea == 1 && !alreadySeen(canVisit, seenCount, currA->v)) {
+                    canVisit[seenCount++] = currA->v;
+                }
+            }
         }
-        if (currLoc->type[BOAT-1] && sea) {
-            insertInto(canVisit, currLoc->v);
-            printf("Adding connection!!!\n");
-        }
-        currLoc = currLoc->next;
     }
-    // Dracula can't visit the hospital
-    if (player == PLAYER_DRACULA) {
-        dropFrom(canVisit, ST_JOSEPH_AND_ST_MARYS);
-    }
-    
-    showSet(canVisit);
-    *numLocations = nElems(canVisit);
-    return condensedSet(canVisit);
+    *numLocations = seenCount;
+    return canVisit;
 }
-/*
+
 // Checks if location already seen, eliminate duplicate locations in list
 static int alreadySeen (int * seen, int numPlaces, LocationID checking) 
 {
@@ -343,28 +343,39 @@ static int alreadySeen (int * seen, int numPlaces, LocationID checking)
     }
     return 0;
 }
-*/
 
-// railTravel
-// Recursive/Depth first search algorithm to add rail connections within range
-// to the canVisit set...
-static void railTravel(GameView g, int dist, Set canVisit, VList currLoc)
+static void railTravel(GameView currentView, int rail, int *canVisit, 
+                        int *seenCount, Round roundNum, VList currA)
 {
-    printf("in while loop, checking location %d, %s\n", currLoc->v,
-                idToName(currLoc->v));
-    printf("road = %d, rail = %d, boat = %d\n", currLoc->type[ROAD-1],
-                currLoc->type[RAIL-1], currLoc->type[BOAT-1]);
-    
-    if(dist <= 0) {
-        return;
-    }
-    insertInto(canVisit, currLoc->v);
-    
-    while(currLoc != NULL) {
-        if(currLoc->type[RAIL-1]) {
-            railTravel(g, dist-1, canVisit, g->map->connections[currLoc->v]);
-            currLoc = currLoc->next;
+    int j, k;
+    if (rail == 1 && !alreadySeen(canVisit, *seenCount, currA->v)) {
+        switch (roundNum % 4) {
+        case 0: break;
+        case 1: 
+            canVisit[*seenCount++] = currA->v; 
+            break;
+        // Special case where hunter can move 2 or more locations via rail
+        default: 
+        
+            canVisit[*seenCount++] = currA->v;
+            VList currB = currentView->map->connections[currA->v];
+            for (; currB != NULL; currB = currB->next) {
+                for (j = 0; j < MAX_TRANSPORT; j++) {
+                    if (currB->type[j] == RAIL && !alreadySeen(canVisit, *seenCount, currB->v)) {
+                        canVisit[*seenCount++] = currB->v;
+                        if (roundNum % 4 == 3) {
+                            VList currC = currentView->map->connections[currB->v];
+                            for (; currC != NULL; currC = currC->next) {
+                                for (k = 0; k < MAX_TRANSPORT; k++) {
+                                    if (currC->type[k] == RAIL && !alreadySeen(canVisit, *seenCount, currC->v))
+                                        canVisit[*seenCount++] = currC->v;
+                                }                                   
+                            }
+                        }       
+                    }
+                }
+            }
+        break;
         }
-        currLoc = currLoc->next;
     }
 }
