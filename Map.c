@@ -25,6 +25,7 @@ struct MapRep {
 
 static int inVList(VList L, LocationID v, TransportID t);
 static void addConnections(Map);
+void showConnections(Map g, LocationID start, TransportID type);
 
 // Create a new empty graph (for a map)
 // #Vertices always same as NUM_PLACES
@@ -176,6 +177,19 @@ int numE(Map g, TransportID t)
          n = n->next;
    }
    return nE;
+}
+
+void showConnections(Map g, LocationID start, TransportID type) {
+    VList curr = g->connections[start];
+    printf("Connections, type %d, at %d, %s:\n", type, start, 
+            idToName(start));
+    while(curr != NULL) {
+        if(curr->type[type]) {
+            printf("%d ", curr->v);
+        }
+        curr = curr->next;
+    }
+    printf("\n");
 }
 
 // Returns the number of direct connections between two nodes

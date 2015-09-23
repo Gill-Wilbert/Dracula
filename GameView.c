@@ -40,7 +40,7 @@ struct gameView {
 };
 
 //static int alreadySeen(int * seen, int numPlaces, LocationID checking);
-static void railTravel(GameView g, int dist, Set canVisit, VList currLoc);
+static void railTravel(GameView g, int dist, Set canVisit, LocationID city);
 
 //function to push location onto the trail[0]
 //and shift the rest of the array by 1
@@ -280,9 +280,6 @@ LocationID *connectedLocations(GameView g, int *numLocations,
                                LocationID from, PlayerID player, Round round,
                                int road, int rail, int sea)
 {
-    printf("from = %d--%s, player = %d, round = %d,\n", from, idToName(from),
-            player, round);
-    printf("road = %d, rail = %d, sea = %d\n", road, rail, sea);
     // Quick validity checks
     if (from < MIN_MAP_LOCATION || from > MAX_MAP_LOCATION) {
         return NULL;
@@ -304,22 +301,15 @@ LocationID *connectedLocations(GameView g, int *numLocations,
     insertInto(canVisit, from);
     //insertInto(canVisit, currLoc->v);
     while(currLoc != NULL) {
-        printf("in while loop, checking location %d, %s\n", currLoc->v,
-                idToName(currLoc->v));
-        printf("road = %d, rail = %d, boat = %d\n", currLoc->type[ROAD-1],
-                currLoc->type[RAIL-1], currLoc->type[BOAT-1]);
         if (currLoc->type[ROAD-1] && road) {
             insertInto(canVisit, currLoc->v);
-            printf("Adding connection!!!\n");
         } 
         if (currLoc->type[RAIL-1] && rail && railDistance) {
-            railTravel(g, railDistance, canVisit, currLoc);
-            printf("Adding connection!!!\n");
+            railTravel(g, railDistance, canVisit, currLoc->v);
             insertInto(canVisit, currLoc->v);
         }
         if (currLoc->type[BOAT-1] && sea) {
             insertInto(canVisit, currLoc->v);
-            printf("Adding connection!!!\n");
         }
         currLoc = currLoc->next;
     }
@@ -336,23 +326,19 @@ LocationID *connectedLocations(GameView g, int *numLocations,
 // railTravel
 // Recursive/Depth first search algorithm to add rail connections within range
 // to the canVisit set...
-static void railTravel(GameView g, int dist, Set canVisit, VList currLoc)
+static void railTravel(GameView g, int dist, Set canVisit, LocationID city)
 {
-    printf("in while loop, checking location %d, %s\n", currLoc->v,
-                idToName(currLoc->v));
-    printf("road = %d, rail = %d, boat = %d\n", currLoc->type[ROAD-1],
-                currLoc->type[RAIL-1], currLoc->type[BOAT-1]);
-    
+    VList currLoc = g->map->connections[city];
     if(dist <= 0) {
         return;
     }
-    insertInto(canVisit, currLoc->v);
-    printf("Adding connection!!!\n");
+    insertInto(canVisit, city);
     
     while(currLoc != NULL) {
+        //showConnections(g->map, currLoc->v, RAIL-1);
         if(currLoc->type[RAIL-1]) {
-            railTravel(g, dist-1, canVisit, g->map->connections[currLoc->v]);
-            currLoc = currLoc->next;
+            railTravel(g, dist-1, canVisit, currLoc->v);
+            //currLoc = currLoc->next;
         }
         currLoc = currLoc->next;
     }
