@@ -57,7 +57,7 @@ int main()
     assert(history[1] == UNKNOWN_LOCATION);
     printf("passed\n");        
     disposeGameView(gv);
-
+#if 0
     printf("Test for Dracula doubling back at sea, and losing blood points (Hunter View)\n");
     PlayerMessage messages4[] = {"Hello","Rubbish","Stuff","","Mwahahah","Aha!","","","","Back I go"};
     gv = newGameView("GGE.... SGE.... HGE.... MGE.... DS?.... "
@@ -83,7 +83,7 @@ int main()
     assert(getCurrentPlayer(gv) == 0);
     printf("passed\n");
     disposeGameView(gv);
-
+#endif
     printf("Test for connections\n");
     int size, seen[NUM_MAP_LOCATIONS], *edges;
     gv = newGameView("", messages1);    
@@ -91,6 +91,7 @@ int main()
     edges = connectedLocations(gv,&size,GALATZ,PLAYER_LORD_GODALMING,0,1,0,0);
     memset(seen, 0, NUM_MAP_LOCATIONS*sizeof(int));
     for (i = 0; i< size ; i++) seen[edges[i]] = 1;
+    printf("size = %d\n",size);
     assert(size == 5); assert(seen[GALATZ]); assert(seen[CONSTANTA]);
     assert(seen[BUCHAREST]); assert(seen[KLAUSENBURG]); assert(seen[CASTLE_DRACULA]);
     free(edges);
@@ -106,6 +107,42 @@ int main()
     edges = connectedLocations(gv,&size,ATHENS,PLAYER_LORD_GODALMING,0,0,1,0);
     assert(size == 1);
     assert(edges[0] == ATHENS);
+    // Testing for rail connections when round % 4 = 1
+    printf("Checking Galatz rail connections, roundNum mod 4 = 0\n");
+    edges = connectedLocations(gv,&size,GALATZ,PLAYER_LORD_GODALMING,0,0,1,0);
+    assert(size == 1);
+    memset(seen, 0, NUM_MAP_LOCATIONS*sizeof(int));
+    for (i = 0; i< size ; i++) seen[edges[i]] = 1;
+    assert(seen[GALATZ]);
+    printf("Checking Galatz rail connections, roundNum mod 4 = 1\n");
+    edges = connectedLocations(gv,&size,GALATZ,PLAYER_LORD_GODALMING,1,0,1,0);
+    assert(size == 2);
+    memset(seen, 0, NUM_MAP_LOCATIONS*sizeof(int));
+    for (i = 0; i< size ; i++) seen[edges[i]] = 1;
+    assert(seen[GALATZ]); assert(seen[BUCHAREST]);
+    printf("Checking Galatz rail connections, roundNum mod 4 = 2\n");
+    edges = connectedLocations(gv,&size,GALATZ,PLAYER_LORD_GODALMING,2,0,1,0);
+    assert(size == 4);
+    memset(seen, 0, NUM_MAP_LOCATIONS*sizeof(int));
+    for (i = 0; i< size ; i++) seen[edges[i]] = 1;
+    assert(seen[GALATZ]); assert(seen[BUCHAREST]); assert(seen[CONSTANTA]);
+    assert(seen[SZEGED]);
+    printf("Checking Galatz rail connections, roundNum mod 4 = 3\n");
+    edges = connectedLocations(gv,&size,GALATZ,PLAYER_LORD_GODALMING,3,0,1,0);
+    assert(size == 6);
+    memset(seen, 0, NUM_MAP_LOCATIONS*sizeof(int));
+    for (i = 0; i< size ; i++) seen[edges[i]] = 1;
+    assert(seen[GALATZ]); assert(seen[BUCHAREST]); assert(seen[CONSTANTA]);
+    assert(seen[SZEGED]); assert(seen[BUDAPEST]); assert(seen[BELGRADE]);
+    int j;
+    for (j = 0; j < 4; j++) {
+        printf("Checking Galatz rail connections with dracula, roundNum mod 4 = %d\n", j);
+        edges = connectedLocations(gv,&size,GALATZ,PLAYER_DRACULA,j,0,1,0);
+        assert(size = 1);
+        memset(seen, 0, NUM_MAP_LOCATIONS*sizeof(int));
+        for (i = 0; i< size ; i++) seen[edges[i]] = 1;
+        assert(seen[GALATZ]);
+    }
     free(edges);
     printf("passed\n");
     disposeGameView(gv);

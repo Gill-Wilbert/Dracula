@@ -6,13 +6,20 @@
 #include "Game.h"
 #include "GameView.h"
 #include "DracView.h"
-// #include "Map.h" ... if you decide to use the Map ADT
+#include "Map.h"
+#include "Places.h"
      
+typedef struct _player {
+    int health;
+    LocationID currLocation;
+} player;
+
 struct dracView {
-    //REPLACE THIS WITH YOUR OWN IMPLEMENTATION
+    player players[NUM_PLAYERS];
+    int score;
+    int roundnum;
     int hello;
 };
-     
 
 // Creates a new DracView to summarise the current state of the game
 DracView newDracView(char *pastPlays, PlayerMessage messages[])
@@ -20,6 +27,25 @@ DracView newDracView(char *pastPlays, PlayerMessage messages[])
     //REPLACE THIS WITH YOUR OWN IMPLEMENTATION
     DracView dracView = malloc(sizeof(struct dracView));
     dracView->hello = 42;
+    /*Map g = newMap();
+    player players[NUM_PLAYERS];
+    
+    dracView->score = 366;
+    dracView->roundnum = 0;
+    
+    //Initialise Hunters
+    int i;
+    for(i = 0; i < NUM_PLAYERS - 1; i++) {
+        players[i]->health = GAME_START_HUNTER_LIFE_POINTS;
+        players[i]->currLocation = UNKNOWN_LOCATION;
+    }
+    
+    //Initialise Dracula
+    players[i]->health = GAME_START_BLOOD_POINTS;
+    players[i]->currLocation = UNKNOWN_LOCATION;
+    
+    */
+    
     return dracView;
 }
      

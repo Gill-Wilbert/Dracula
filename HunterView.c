@@ -6,20 +6,42 @@
 #include "Game.h"
 #include "GameView.h"
 #include "HunterView.h"
-// #include "Map.h" ... if you decide to use the Map ADT
+#include "Map.h"
+
+#define PLAY_LENGTH 8
+#define TRAIL_LENGTH 6  
+
+typedef struct _trailnode {
+    LocationID location;
+    int turnvisited;
+    int isdoubleback;
+    int ishide;
+    int isvampire; 
+    int traps;
+} trailnode;   
      
+typedef struct _player {
+     trailnode trail[TRAIL_LENGTH];
+     int health;
+     LocationID currlocation;
+} player;
+
 struct hunterView {
-    //REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-    int hello;
-};
-     
+    //player players[NUM_PLAYERS];
+    //char *playermessages;
+    //char *pastplays;
+    int score;
+    //int roundnum;
+    //int currplayer;
+    //Map map;
+};     
 
 // Creates a new HunterView to summarise the current state of the game
 HunterView newHunterView(char *pastPlays, PlayerMessage messages[])
 {
-    //REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-    HunterView hunterView = malloc(sizeof(struct hunterView));
-    hunterView->hello = 42;
+    HunterView hunterView = malloc(sizeof(hunterView));
+    hunterView->score = 366;
+    //hunterView = newGameView(pastPlays, messages);
     return hunterView;
 }
      
